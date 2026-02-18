@@ -29,7 +29,7 @@ pipx install git+https://github.com/l4rm4nd/PyADRecon-ADWS
 Then verify installation:
 
 ````bash
-pyadrecon-adws --version
+pyadrecon_adws --version
 ````
 
 > [!TIP]
@@ -38,7 +38,7 @@ pyadrecon-adws --version
 ## Usage
 
 ````py
-usage: pyadrecon-adws.py [-h] [--version] [--generate-excel-from CSV_DIR] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-dc DOMAIN_CONTROLLER] [--port PORT]
+usage: pyadrecon_adws.py [-h] [--version] [--generate-excel-from CSV_DIR] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-dc DOMAIN_CONTROLLER] [--port PORT]
                          [--auth {ntlm,kerberos}] [--tgt-file TGT_FILE] [--tgt-base64 TGT_BASE64] [--workstation WORKSTATION] [-c COLLECT] [--only-enabled]
                          [--page-size PAGE_SIZE] [--dormant-days DORMANT_DAYS] [--password-age PASSWORD_AGE] [-o OUTPUT] [--no-excel] [-v]
 
@@ -79,16 +79,16 @@ options:
 
 Examples:
   # Basic usage with NTLM authentication
-  pyadrecon-adws.py -dc 192.168.1.1 -u admin -p password123 -d DOMAIN.LOCAL
+  pyadrecon_adws.py -dc 192.168.1.1 -u admin -p password123 -d DOMAIN.LOCAL
 
   # Only collect specific modules
-  pyadrecon-adws.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL --collect users,groups,computers
+  pyadrecon_adws.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL --collect users,groups,computers
 
   # Output to specific directory
-  pyadrecon-adws.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL -o /tmp/adrecon_output
+  pyadrecon_adws.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL -o /tmp/adrecon_output
 
   # Generate Excel report from existing CSV files (standalone mode)
-  pyadrecon-adws.py --generate-excel-from /path/to/CSV-Files -o report.xlsx
+  pyadrecon_adws.py --generate-excel-from /path/to/CSV-Files -o report.xlsx
 ````
 
 ## Docker
