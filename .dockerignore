@@ -1,0 +1,36 @@
+# PyADRecon output directories
+PyADRecon-ADWS-Report-*/
+results/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+LICENSE
+
+# CI/CD
+.github/
+
+# Virtual environments
+venv/
+env/
+ENV/
