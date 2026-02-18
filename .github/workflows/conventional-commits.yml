@@ -54,18 +54,18 @@ jobs:
         run: |
           git pull origin main
 
-      - name: Inject version into pyadrecon-adws.py
+      - name: Inject version into pyadrecon_adws.py
         run: |
           VERSION=${{ needs.changelog.outputs.tag }}
-          sed -i 's/VERSION = ".*"/VERSION = "'${VERSION}'"/' pyadrecon-adws.py
+          sed -i 's/VERSION = ".*"/VERSION = "'${VERSION}'"/' pyadrecon_adws.py
           echo "Updated VERSION to ${VERSION}"
-          grep 'VERSION = ' pyadrecon-adws.py
+          grep 'VERSION = ' pyadrecon_adws.py
 
       - name: Commit version update
         run: |
           git config --local user.email "21357789+l4rm4nd@users.noreply.github.com"
           git config --local user.name "l4rm4nd"
-          git add pyadrecon-adws.py
+          git add pyadrecon_adws.py
           git commit -m "chore: bump version to ${{ needs.changelog.outputs.tag }} [skip ci]" || echo "No changes to commit"
           git push origin main
 
