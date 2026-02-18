@@ -1,3 +1,10 @@
+## [0.1.4](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.1.3...v0.1.4) (2026-02-18)
+
+
+### Bug Fixes
+
+* Update Dockerfile ([9f1fd10](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/9f1fd10f7ad8258fa6e538183cbcc3d3b9eef51f))
+
 ## [0.1.3](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.1.2...v0.1.3) (2026-02-18)
 
 
