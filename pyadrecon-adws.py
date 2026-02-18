@@ -74,7 +74,7 @@ except ImportError:
     print("[*] openpyxl not available - Excel export disabled")
 
 # Constants
-VERSION = "v0.1.0"  # Automatically updated by CI/CD pipeline during release
+VERSION = "v0.1.1"  # Automatically updated by CI/CD pipeline during release
 BANNER = f"""
 ╔═════════════════════════════════════════════════════════════
 ║  PyADRecon {VERSION} - Python AD Reconnaissance Tool (ADWS)
