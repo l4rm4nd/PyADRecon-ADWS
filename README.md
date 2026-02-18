@@ -1,8 +1,8 @@
 <img src="https://raw.githubusercontent.com/l4rm4nd/PyADRecon-ADWS/refs/heads/main/.github/pyadrecon.png" alt="pyadrecon" width="300"/>
 
-Python3 implementation of an improved [ADRecon](https://github.com/sense-of-security/ADRecon) for Pentesters, Red and Blue Teams
+A Python3 implementation of [PyADRecon](https://github.com/l4rm4nd/PyADRecon) using ADWS instead of LDAP for Pentesters, Red and Blue Teams
 
-> ADRecon is a tool which gathers information about MS Active Directory and generates an XSLX report to provide a holistic picture of the current state of the target AD environment.
+> PyADRecon is a tool which gathers information about MS Active Directory and generates an XSLX report to provide a holistic picture of the current state of the target AD environment.
 
 >[!TIP]
 >Queries Active Directory Web Services (ADWS) over TCP/9389 instead of LDAP to fly under the EDR radar.
