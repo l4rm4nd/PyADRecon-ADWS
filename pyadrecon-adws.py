@@ -4459,7 +4459,7 @@ class PyADRecon:
             results.append({"Category": "PyADRecon Version", "Value": VERSION})
             results.append({"Category": "Date", "Value": self.start_time.strftime("%m.%d.%Y %H:%M")})
             results.append({"Category": "GitHub Repository", "Value": "github.com/l4rm4nd/PyADRecon"})
-            results.append({"CategorFy": "Executed By", "Value": self.config.username if self.config.username else "Current User"})
+            results.append({"Category": "Executed By", "Value": self.config.username if self.config.username else "Current User"})
             results.append({"Category": "Executed From", "Value": f"{local_computer} ({computer_type})"})
             results.append({"Category": "Execution Time", "Value": f"{duration_secs:.2f} seconds"})
             results.append({"Category": "Target Domain", "Value": dn_to_fqdn(self.base_dn)})
@@ -6136,8 +6136,6 @@ def generate_excel_from_csv(csv_dir: str, output_file: str = None):
 
 def main():
     """Main entry point."""
-    print(BANNER)
-
     parser = argparse.ArgumentParser(
         description='PyADRecon-ADWS # Active Directory Reconnaissance using ADWS',
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -6190,6 +6188,7 @@ def main():
 
     # Standalone Excel generation mode
     if args.generate_excel_from:
+        print(BANNER)
         if not OPENPYXL_AVAILABLE:
             logger.error("[!] openpyxl not available - install with: pip install openpyxl")
             sys.exit(1)
@@ -6200,6 +6199,9 @@ def main():
             sys.exit(0)
         else:
             sys.exit(1)
+
+    # Print banner for normal mode
+    print(BANNER)
 
     # Configure logging level
     if args.verbose:

@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/l4rm4nd/PyADRecon/refs/heads/main/.github/pyadrecon.png" alt="pyadrecon" width="300"/>
+<img src="https://raw.githubusercontent.com/l4rm4nd/PyADRecon-ADWS/refs/heads/main/.github/pyadrecon.png" alt="pyadrecon" width="300"/>
 
 Python3 implementation of an improved [ADRecon](https://github.com/sense-of-security/ADRecon) for Pentesters, Red and Blue Teams
 
@@ -38,89 +38,70 @@ pyadrecon-adws --version
 ## Usage
 
 ````py
-usage: pyadrecon.py [-h] [--version] [--generate-excel-from CSV_DIR] [-dc DOMAIN_CONTROLLER] [-u USERNAME] [-p [PASSWORD]] [-d DOMAIN] [--auth {ntlm,kerberos}] [--tgt-file TGT_FILE] [--tgt-base64 TGT_BASE64]
-                    [--ssl] [--port PORT] [-o OUTPUT] [--page-size PAGE_SIZE] [--threads THREADS] [--dormant-days DORMANT_DAYS] [--password-age PASSWORD_AGE] [--only-enabled] [--collect COLLECT]
-                    [--no-excel] [-v]
+usage: pyadrecon-adws.py [-h] [--version] [--generate-excel-from CSV_DIR] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-dc DOMAIN_CONTROLLER] [--port PORT]
+                         [--auth {ntlm,kerberos}] [--tgt-file TGT_FILE] [--tgt-base64 TGT_BASE64] [--workstation WORKSTATION] [-c COLLECT] [--only-enabled]
+                         [--page-size PAGE_SIZE] [--dormant-days DORMANT_DAYS] [--password-age PASSWORD_AGE] [-o OUTPUT] [--no-excel] [-v]
 
-PyADRecon - Python Active Directory Reconnaissance Tool
+PyADRecon-ADWS # Active Directory Reconnaissance using ADWS
 
 options:
   -h, --help            show this help message and exit
-  --version             show program's version number and exit  
+  --version             show program's version number and exit
   --generate-excel-from CSV_DIR
-                        Generate Excel report from CSV directory (standalone mode, no AD connection needed)
-  -dc, --domain-controller DOMAIN_CONTROLLER
-                        Domain Controller IP or hostname
+                        Generate Excel report from existing CSV files (standalone mode)
+  -d, --domain DOMAIN   Domain name (e.g., example.com)
   -u, --username USERNAME
-                        Username for authentication
-  -p, --password [PASSWORD]
-                        Password for authentication (optional if using TGT)
-  -d, --domain DOMAIN   Domain name (e.g., DOMAIN.LOCAL) - Required for Kerberos auth
+                        Username (DOMAIN\user or user@domain.com)
+  -p, --password PASSWORD
+                        Password or LM:NTLM hash (will prompt if not provided)
+  -dc, --domain-controller DOMAIN_CONTROLLER
+                        Domain controller hostname or IP
+  --port PORT           ADWS port (default: 9389)
   --auth {ntlm,kerberos}
-                        Authentication method (default: ntlm)
-  --tgt-file TGT_FILE   Path to Kerberos TGT ccache file (for Kerberos auth)
+                        Authentication method (default: ntlm) - Note: Kerberos not yet implemented for ADWS
+  --tgt-file TGT_FILE   Path to Kerberos TGT ccache file (not yet implemented for ADWS)
   --tgt-base64 TGT_BASE64
-                        Base64-encoded Kerberos TGT ccache (for Kerberos auth)
-  --ssl                 Force SSL/TLS (LDAPS). No LDAP fallback allowed.
-  --port PORT           LDAP port (default: 389, use 636 for LDAPS)
-  -o, --output OUTPUT   Output directory (default: PyADRecon-Report-<timestamp>)
-  --page-size PAGE_SIZE
-                        LDAP page size (default: 500)
-  --dormant-days DORMANT_DAYS
-                        Days for dormant account threshold (default: 90)
-  --password-age PASSWORD_AGE
-                        Days for password age threshold (default: 180)
-  --only-enabled        Only collect enabled objects
-  --collect COLLECT     Comma-separated modules to collect (default: all)
+                        Base64-encoded Kerberos TGT ccache (not yet implemented for ADWS)
   --workstation WORKSTATION
-                        Explicitly spoof workstation name for NTLM authentication (default: empty string, bypasses userWorkstations restrictions)  
-  --no-excel            Skip Excel report generation
-  -v, --verbose         Verbose output
+                        NTLM authentication workstation name (default: random)
+  -c, --collect COLLECT
+                        Comma-separated modules to collect (default: all)
+  --only-enabled        Only collect enabled users/computers
+  --page-size PAGE_SIZE
+                        ADWS query page size (default: 1000)
+  --dormant-days DORMANT_DAYS
+                        Users/Computers with lastLogon older than X days are dormant (default: 90)
+  --password-age PASSWORD_AGE
+                        Users with pwdLastSet older than X days have old passwords (default: 180)
+  -o, --output OUTPUT   Output directory (default: PyADRecon-Report-<timestamp>)
+  --no-excel            Skip Excel export
+  -v, --verbose         Enable verbose output
 
 Examples:
   # Basic usage with NTLM authentication
-  pyadrecon.py -dc 192.168.1.1 -u admin -p password123 -d DOMAIN.LOCAL
-
-  # With Kerberos authentication (bypasses channel binding)
-  pyadrecon.py -dc dc01.domain.local -u admin -p password123 -d DOMAIN.LOCAL --auth kerberos
-
-  # With Kerberos using TGT from file (bypasses channel binding)
-  pyadrecon.py -dc dc01.domain.local -u admin -d DOMAIN.LOCAL --auth kerberos --tgt-file /tmp/admin.ccache
-
-  # With Kerberos using TGT from base64 string (bypasses channel binding)
-  pyadrecon.py -dc dc01.domain.local -u admin -d DOMAIN.LOCAL --auth kerberos --tgt-base64 BQQAAAw...
+  pyadrecon-adws.py -dc 192.168.1.1 -u admin -p password123 -d DOMAIN.LOCAL
 
   # Only collect specific modules
-  pyadrecon.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL --collect users,groups,computers
+  pyadrecon-adws.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL --collect users,groups,computers
 
   # Output to specific directory
-  pyadrecon.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL -o /tmp/adrecon_output
+  pyadrecon-adws.py -dc 192.168.1.1 -u admin -p pass -d DOMAIN.LOCAL -o /tmp/adrecon_output
 
   # Generate Excel report from existing CSV files (standalone mode)
-  pyadrecon.py --generate-excel-from /path/to/CSV-Files -o report.xlsx
+  pyadrecon-adws.py --generate-excel-from /path/to/CSV-Files -o report.xlsx
 ````
-
->[!TIP]
->PyADRecon always tries LDAPS on TCP/636 first.
->
->If flag `--ssl` is not used, LDAP on TCP/389 may be tried as fallback.
-
->[!WARNING]
->If LDAP channel binding is enabled, this script will fail with `automatic bind not successful - strongerAuthRequired`, as ldap3 does not support it (see [here](https://github.com/cannatag/ldap3/issues/1049#issuecomment-1222826803)). You must use Kerberos authentication instead.
->
->If you use Kerberos auth under Linux, please create a valid `/etc/krb5.conf` and DC hostname entry in `/etc/hosts`. May read [this](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=32628#KerberosClientConfiguration-*NIX/etc/krb5.confConfiguration). If you are on Windows, please make sure you have valid Kerberos tickets. May read [this](https://github.com/l4rm4nd/PyADRecon/tree/main/windows#kerberos-authentication). Note that you can provide an already existing TGT ticket to the script via `--tgt-file` or `--tgt-base64`. For example, obtained by Netexec via `netexec smb <TARGET> <ARGS> --generate-tgt <FILEMAME>`.
 
 ## Docker
 
 There is also a Docker image available on GHCR.IO.
 
 ````
-docker run --rm -v /etc/krb5.conf:/etc/krb5.conf:ro -v /etc/hosts:/etc/hosts:ro -v ./:/tmp/pyadrecon_output ghcr.io/l4rm4nd/pyadrecon:latest -dc dc01.domain.local -u admin -p password123 -d DOMAIN.LOCAL -o /tmp/pyadrecon_output
+docker run --rm -v /etc/krb5.conf:/etc/krb5.conf:ro -v /etc/hosts:/etc/hosts:ro -v ./:/tmp/pyadrecon_output ghcr.io/l4rm4nd/pyadrecon-adws:latest -dc dc01.domain.local -u admin -p password123 -d DOMAIN.LOCAL -o /tmp/pyadrecon_output
 ````
 
 ## Collection Modules
 
-As default, PyADRecon runs all collection modules. They are referenced to as `default` or `all`.
+As default, PyADRecon-ADWS runs all collection modules. They are referenced to as `default` or `all`.
 
 Though, you can freely select your own collection of modules to run:
 
@@ -183,21 +164,21 @@ Though, you can freely select your own collection of modules to run:
 ## Acknowledgements
 
 Many thanks to the following folks:
- - [S3cur3Th1sSh1t](https://github.com/S3cur3Th1sSh1t) for a first Claude draft of this Python3 port 
+- [S3cur3Th1sSh1t](https://github.com/S3cur3Th1sSh1t) for a first Claude draft of an alike PyADRecon LDAP port 
 - [Sense-of-Security](https://github.com/sense-of-security) for the original ADRecon script in PowerShell
-- [cannatag](https://github.com/cannatag) for the awesome ldap3 Python client
+- [dirkjanm](https://github.com/dirkjanm) for the original ldapdomaindump script
+- [mverschu](https://github.com/mverschu) for his port of ldapdomaindump using ADWS. This repo heavily makes use of the ldap->adws wrapper scripts
 - [Forta](https://github.com/fortra) for the awesome impacket suite
 - [Anthropic](https://github.com/anthropics) for Claude LLMs
 
 ## License
 
-**PyADRecon** is released under the **MIT License**.
+**PyADRecon-ADWS** is released under the **MIT License**.
 
 The following third-party libraries are used:
 
 | Library     | License        |
 |-------------|----------------|
-| ldap3       | LGPL v3        |
 | openpyxl    | MIT            |
 | gssapi      | MIT            |
 | impacket    | Apache 2.0     |

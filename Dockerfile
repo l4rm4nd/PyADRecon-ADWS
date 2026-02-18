@@ -58,6 +58,7 @@ COPY --from=builder /install /usr/local
 
 # Copy application
 COPY pyadrecon-adws.py /app/
+COPY helpers/ /app/helpers/
 
 WORKDIR /app
 ENTRYPOINT ["python", "pyadrecon-adws.py"]

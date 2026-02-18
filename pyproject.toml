@@ -1,0 +1,43 @@
+
+[build-system]
+requires = ["setuptools>=68", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dependencies = [
+name = "PyADRecon-ADWS"
+dynamic = ["version"]
+description = "Python Active Directory Reconnaissance Tool (ADRecon port) with NTLM support."
+readme = "README.md"
+requires-python = ">=3.9"
+license-files = ["LICENSE"]
+license = "MIT"
+authors = [{ name = "LRVT" }]
+keywords = ["active-directory", "active directory", "adws","active directory web services", "ad", "recon", "reconnaissance", "enum", "enumeration", "adrecon", "pyadrecon", "security", "audit", "pentest", "adcs", "kerberoast"]
+
+dependencies = [
+  "openpyxl>=3.1.5,<4",
+  "impacket>=0.13.0,<1",
+  "dnspython>=2.0.0",
+  # Needed on Windows because hashlib/OpenSSL often has MD4 disabled, but NTLM needs MD4
+  "pycryptodome>=3.23.0,<4; sys_platform == 'win32'",
+]
+
+[project.urls]
+Homepage = "https://github.com/l4rm4nd/PyADRecon-ADWS"
+Repository = "https://github.com/l4rm4nd/PyADRecon-ADWS"
+Issues = "https://github.com/l4rm4nd/PyADRecon-ADWS/issues"
+
+[project.scripts]
+pyadrecon-adws = "pyadrecon-adws:main"
+
+
+[tool.setuptools.packages.find]
+where = ["helpers"]
+include = ["helpers*"]
+
+# Version comes from Git tags like v0.11.0. CI will build from the tag ref.
+[tool.setuptools_scm]
+tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
+version_scheme = "release-branch-semver"
+local_scheme = "no-local-version"
