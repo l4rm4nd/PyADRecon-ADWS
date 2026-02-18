@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-PyADRecon ADWS - Python Active Directory Reconnaissance Tool using ADWS
-A Python port of ADRecon with ADWS (Active Directory Web Services) support.
+PyADRecon-ADWS # Python Active Directory Reconnaissance Tool using ADWS
+A Python port of ADRecon with NTLM authentication querying ADWS.
 
 This version uses ADWS (port 9389) instead of LDAP (port 389/636) for AD enumeration.
-ADWS is often less monitored than traditional LDAP in enterprise environments.
+ADWS is often less monitored (AV/EDR) than traditional LDAP in enterprise environments.
 
 Author: LRVT - https://github.com/l4rm4nd
 License: MIT
@@ -74,15 +74,14 @@ except ImportError:
     print("[*] openpyxl not available - Excel export disabled")
 
 # Constants
-VERSION = "v0.11.9-ADWS"  # ADWS version
+VERSION = "v0.0.1"  # Automatically updated by CI/CD pipeline during release
 BANNER = f"""
-╔═════════════════════════════════════════════════════════
+╔═════════════════════════════════════════════════════════════
 ║  PyADRecon {VERSION} - Python AD Reconnaissance Tool (ADWS)
 ║  A Python implementation inspired by ADRecon
-║  Using ADWS (Active Directory Web Services) on port 9389
 ║  -------------------------------------------------------
 ║  Author: LRVT - https://github.com/l4rm4nd/PyADRecon              
-╚═════════════════════════════════════════════════════════
+╚═════════════════════════════════════════════════════════════
 """
 
 # AD Constants
@@ -718,10 +717,7 @@ class ADReconConfig:
     password_age_days: int = 180
     only_enabled: bool = False
     output_dir: str = "."
-    stealth_mode: bool = False
-    stealth_min_delay: float = 1.0
-    stealth_max_delay: float = 3.0
-    stealth_chunk_size: int = 50
+    workstation: Optional[str] = None  # NTLM workstation name
     
     # Collection flags
     collect_forest: bool = True
@@ -861,12 +857,6 @@ class PyADRecon:
             logger.error(f"Search failed: {e}")
             logger.debug(f"Filter: {search_filter}, Base: {search_base}")
             return []
-
-    def _stealth_delay(self):
-        """Add random delay for stealth mode."""
-        if self.config.stealth_mode:
-            delay = random.uniform(self.config.stealth_min_delay, self.config.stealth_max_delay)
-            time.sleep(delay)
 
     def _resolve_sid_to_name(self, sid: str) -> str:
         """Resolve a SID to a readable name (user/group) with caching."""
@@ -1451,7 +1441,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 uac = get_attr(entry, 'userAccountControl', 0)
                 uac_parsed = parse_uac(uac)
@@ -1676,7 +1665,6 @@ class PyADRecon:
             entries.extend(msa_entries)
 
             for entry in entries:
-                self._stealth_delay()
                 
                 uac = get_attr(entry, 'userAccountControl', 0)
                 uac_parsed = parse_uac(uac)
@@ -1820,7 +1808,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 group_type = get_attr(entry, 'groupType')
                 gt = safe_int(group_type)
@@ -1886,7 +1873,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 group_name = get_attr(entry, 'name', '')
                 group_sam = get_attr(entry, 'sAMAccountName', '')
@@ -1971,7 +1957,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 gp_link = get_attr(entry, 'gPLink', '')
                 dn = get_attr(entry, 'distinguishedName', '')
@@ -2009,7 +1994,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 flags = get_attr(entry, 'flags', 0)
                 flags = safe_int(flags)
@@ -2152,7 +2136,6 @@ class PyADRecon:
                 logger.debug(f"Could not query DNS records: {e}")
 
             for entry in entries:
-                self._stealth_delay()
                 
                 dc_name = safe_str(get_attr(entry, 'name', '')).upper()
                 hostname = safe_str(get_attr(entry, 'dNSHostName', ''))
@@ -2380,7 +2363,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 spns = get_attr_list(entry, 'servicePrincipalName')
                 uac = get_attr(entry, 'userAccountControl', 0)
@@ -2462,7 +2444,6 @@ class PyADRecon:
             grouped_spns = {}
             
             for entry in all_entries:
-                self._stealth_delay()
                 
                 spns = get_attr_list(entry, 'servicePrincipalName')
                 sam_account = get_attr(entry, 'sAMAccountName', '')
@@ -2551,7 +2532,6 @@ class PyADRecon:
                 all_entries.extend(msa_entries)
 
             for entry in all_entries:
-                self._stealth_delay()
                 
                 uac = get_attr(entry, 'userAccountControl', 0)
                 uac_parsed = parse_uac(uac)
@@ -2955,7 +2935,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 trust_dir = get_attr(entry, 'trustDirection', 0)
                 trust_type = get_attr(entry, 'trustType', 0)
@@ -3005,7 +2984,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 results.append({
                     "Name": get_attr(entry, 'name', ''),
@@ -3034,7 +3012,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 site_obj = get_attr(entry, 'siteObject', '')
                 site_name = ""
@@ -3072,7 +3049,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 obj_class = get_attr(entry, 'objectClass')
                 if isinstance(obj_class, list):
@@ -3110,7 +3086,6 @@ class PyADRecon:
             )
 
             for entry in entries:
-                self._stealth_delay()
                 
                 applies_to = get_attr_list(entry, 'msDS-PSOAppliesTo')
 
@@ -3154,7 +3129,6 @@ class PyADRecon:
                     )
 
                     for entry in entries:
-                        self._stealth_delay()
                         
                         results.append({
                             "Name": get_attr(entry, 'name', ''),
@@ -3379,7 +3353,6 @@ class PyADRecon:
                     )
 
                     for entry in entries:
-                        self._stealth_delay()
                         
                         name = get_attr(entry, 'name', '')
                         dns_records = get_attr_list(entry, 'dnsRecord')
@@ -4346,7 +4319,6 @@ class PyADRecon:
             entries.extend(site_entries)
 
             for entry in entries:
-                self._stealth_delay()
                 
                 gp_link = get_attr(entry, 'gPLink', '')
                 gp_options = get_attr(entry, 'gPOptions', 0)
@@ -4487,7 +4459,7 @@ class PyADRecon:
             results.append({"Category": "PyADRecon Version", "Value": VERSION})
             results.append({"Category": "Date", "Value": self.start_time.strftime("%m.%d.%Y %H:%M")})
             results.append({"Category": "GitHub Repository", "Value": "github.com/l4rm4nd/PyADRecon"})
-            results.append({"Category": "Executed By", "Value": self.config.username if self.config.username else "Current User"})
+            results.append({"CategorFy": "Executed By", "Value": self.config.username if self.config.username else "Current User"})
             results.append({"Category": "Executed From", "Value": f"{local_computer} ({computer_type})"})
             results.append({"Category": "Execution Time", "Value": f"{duration_secs:.2f} seconds"})
             results.append({"Category": "Target Domain", "Value": dn_to_fqdn(self.base_dn)})
@@ -4903,6 +4875,103 @@ class PyADRecon:
                         enabled_cell = ws.cell(row=row_idx, column=headers["Enabled"])
                         if enabled_cell.value in [False, "FALSE"]:
                             enabled_cell.fill = yellow_fill
+        
+        # Format CertificateTemplates sheet
+        if "CertificateTemplates" in wb.sheetnames:
+            ws = wb["CertificateTemplates"]
+            if ws.max_row > 1:  # Has data beyond header
+                # Find column indices for security-relevant fields
+                headers = {cell.value: cell.column for cell in ws[1]}
+                
+                # Apply formatting to data rows (skip header)
+                for row_idx in range(2, ws.max_row + 1):
+                    # Highlight Risk Level column (RED for CRITICAL/HIGH, ORANGE for MEDIUM)
+                    if "Risk Level" in headers:
+                        risk_cell = ws.cell(row=row_idx, column=headers["Risk Level"])
+                        risk_value = str(risk_cell.value).upper() if risk_cell.value else ""
+                        
+                        if risk_value in ["CRITICAL", "HIGH"]:
+                            risk_cell.fill = red_fill
+                        elif risk_value == "MEDIUM":
+                            risk_cell.fill = orange_fill
+                    
+                    # Highlight ESC Vulnerabilities column (RED if any ESC vulns present)
+                    if "ESC Vulnerabilities" in headers:
+                        esc_cell = ws.cell(row=row_idx, column=headers["ESC Vulnerabilities"])
+                        esc_value = str(esc_cell.value) if esc_cell.value else ""
+                        
+                        # Check if any ESC vulnerability is present (not "None")
+                        if esc_value and esc_value.strip().upper() != "NONE":
+                            # Highlight based on specific ESC types
+                            if "ESC1" in esc_value or "ESC4" in esc_value:
+                                esc_cell.fill = red_fill
+                            elif "ESC2" in esc_value or "ESC3" in esc_value:
+                                esc_cell.fill = orange_fill
+                            elif "ESC9" in esc_value:
+                                esc_cell.fill = yellow_fill
+                    
+                    # Highlight critical individual flags
+                    if "Enrollee Supplies Subject" in headers:
+                        enrollee_cell = ws.cell(row=row_idx, column=headers["Enrollee Supplies Subject"])
+                        if enrollee_cell.value in [True, "TRUE"]:
+                            # Only highlight red if this is actually part of an ESC1 vulnerability
+                            # Check if this row has ESC1 flagged
+                            is_esc1 = False
+                            if "ESC Vulnerabilities" in headers:
+                                esc_cell = ws.cell(row=row_idx, column=headers["ESC Vulnerabilities"])
+                                esc_value = str(esc_cell.value) if esc_cell.value else ""
+                                is_esc1 = "ESC1" in esc_value
+                            
+                            if is_esc1:
+                                enrollee_cell.fill = red_fill
+                            # Don't highlight if not part of ESC1 (benign use case)
+                    
+                    # Highlight Client Authentication (ORANGE - critical for exploitation)
+                    if "Client Authentication" in headers:
+                        client_auth_cell = ws.cell(row=row_idx, column=headers["Client Authentication"])
+                        if client_auth_cell.value in [True, "TRUE"]:
+                            client_auth_cell.fill = orange_fill
+                    
+                    # Highlight Any Purpose EKU (ORANGE - allows arbitrary usage)
+                    if "Any Purpose EKU" in headers:
+                        any_purpose_cell = ws.cell(row=row_idx, column=headers["Any Purpose EKU"])
+                        if any_purpose_cell.value in [True, "TRUE"]:
+                            any_purpose_cell.fill = orange_fill
+                    
+                    # Highlight Enrollment Agent (ORANGE - can request certs for others)
+                    if "Enrollment Agent" in headers:
+                        enrollment_agent_cell = ws.cell(row=row_idx, column=headers["Enrollment Agent"])
+                        if enrollment_agent_cell.value in [True, "TRUE"]:
+                            enrollment_agent_cell.fill = orange_fill
+                    
+                    # Highlight Allows SAN (ORANGE - similar to Enrollee Supplies Subject)
+                    if "Allows SAN" in headers:
+                        allows_san_cell = ws.cell(row=row_idx, column=headers["Allows SAN"])
+                        if allows_san_cell.value in [True, "TRUE"]:
+                            allows_san_cell.fill = orange_fill
+                    
+                    # Highlight Exportable Key (YELLOW - private key can be exported)
+                    if "Exportable Key" in headers:
+                        exportable_key_cell = ws.cell(row=row_idx, column=headers["Exportable Key"])
+                        if exportable_key_cell.value in [True, "TRUE"]:
+                            exportable_key_cell.fill = yellow_fill
+                    
+                    # Highlight Auto-Enrollment (YELLOW - informational, auto-enrollment enabled)
+                    if "Auto-Enrollment" in headers:
+                        auto_enrollment_cell = ws.cell(row=row_idx, column=headers["Auto-Enrollment"])
+                        if auto_enrollment_cell.value in [True, "TRUE"]:
+                            auto_enrollment_cell.fill = yellow_fill
+                    
+                    # Highlight Requires Manager Approval (GREEN when TRUE, ORANGE when FALSE)
+                    if "Requires Manager Approval" in headers:
+                        approval_cell = ws.cell(row=row_idx, column=headers["Requires Manager Approval"])
+                        if approval_cell.value in [True, "TRUE"]:
+                            # Green for approval required (good security)
+                            green_fill = PatternFill(start_color="B3FFB3", end_color="B3FFB3", fill_type="solid")
+                            approval_cell.fill = green_fill
+                        elif approval_cell.value in [False, "FALSE"]:
+                            # Orange for no approval required (risky)
+                            approval_cell.fill = orange_fill
         
         # Format Groups sheet
         if "Groups" in wb.sheetnames:
@@ -5538,21 +5607,565 @@ class PyADRecon:
             # ADWS connection doesn't need explicit close typically
 
 
+def generate_excel_from_csv(csv_dir: str, output_file: str = None):
+    """
+    Standalone function to generate Excel report from CSV files.
+    This is optimized for large datasets and can be run independently.
+
+    Args:
+        csv_dir: Path to directory containing CSV files
+        output_file: Output Excel file path (optional, defaults to same directory)
+    """
+    if not OPENPYXL_AVAILABLE:
+        logger.error("[!] openpyxl not available - install with: pip install openpyxl")
+        return None
+
+    if not os.path.isdir(csv_dir):
+        logger.error(f"[!] CSV directory not found: {csv_dir}")
+        return None
+
+    logger.info(f"[*] Generating Excel Report from CSV files in: {csv_dir}")
+    start_time = datetime.now()
+
+    try:
+        from openpyxl import Workbook, load_workbook
+        from openpyxl.cell import WriteOnlyCell
+
+        # Define sheet order to match ADRecon
+        SHEET_ORDER = [
+            'AboutPyADRecon', 'Users', 'UserSPNs',
+            'krbtgt', 'ProtectedGroups', 'ASREPRoastable', 'Kerberoastable',
+            'gMSA', 'dMSA', 'GroupMembers', 'Groups', 'OUs', 'Computers',
+            'ComputerSPNs', 'LAPS', 'Printers', 'DNSZones', 'DNSRecords', 'gPLinks', 'GPOs',
+            'DomainControllers', 'CertificateTemplates', 'CertificateAuthorities',
+            'PasswordPolicy', 'FineGrainedPasswordPolicy',
+            'SchemaHistory', 'Sites', 'Domain', 'Forest'
+        ]
+        
+        # Friendly sheet names mapping
+        SHEET_NAME_MAPPING = {
+            'AboutPyADRecon': 'About PyADRecon'
+        }
+
+        # Find all CSV files
+        all_csv_files = [f for f in os.listdir(csv_dir) if f.endswith('.csv')]
+        if not all_csv_files:
+            logger.error(f"[!] No CSV files found in: {csv_dir}")
+            return None
+
+        # Order CSV files according to SHEET_ORDER
+        csv_files = []
+        for sheet in SHEET_ORDER:
+            csv_name = sheet + '.csv'
+            if csv_name in all_csv_files:
+                csv_files.append(csv_name)
+        
+        # Add any remaining CSV files not in the order
+        for csv_file in sorted(all_csv_files):
+            if csv_file not in csv_files:
+                csv_files.append(csv_file)
+
+        logger.info(f"    Found {len(csv_files)} CSV files")
+
+        # Use write_only mode for performance
+        wb = Workbook(write_only=True)
+
+        # Define styles
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="0066CC", end_color="0066CC", fill_type="solid")
+        left_alignment = Alignment(horizontal='left', vertical='top')
+
+        # First pass - count records for TOC
+        file_counts = {}
+        for csv_file in csv_files:
+            csv_path = os.path.join(csv_dir, csv_file)
+            with open(csv_path, 'r', encoding='utf-8', errors='replace') as f:
+                count = sum(1 for _ in f) - 1  # Subtract header
+                file_counts[csv_file] = max(0, count)
+
+        # Create About PyADRecon sheet first if it exists
+        about_csv = 'AboutPyADRecon.csv'
+        if about_csv in csv_files:
+            csv_path = os.path.join(csv_dir, about_csv)
+            display_name = SHEET_NAME_MAPPING.get('AboutPyADRecon', 'AboutPyADRecon')
+            ws = wb.create_sheet(display_name[:31])
+            record_count = file_counts[about_csv]
+            logger.info(f"    [1/1] Processing {about_csv} ({record_count:,} records)...")
+            
+            with open(csv_path, 'r', encoding='utf-8', errors='replace', newline='') as f:
+                reader = csv.reader(f)
+                try:
+                    headers = next(reader)
+                    header_row = []
+                    for header in headers:
+                        cell = WriteOnlyCell(ws, value=header)
+                        cell.font = header_font
+                        cell.fill = header_fill
+                        cell.alignment = left_alignment
+                        header_row.append(cell)
+                    ws.append(header_row)
+                except StopIteration:
+                    pass
+                
+                # Write data rows
+                for row in reader:
+                    ws.append(row)
+
+        # Build TOC data
+        toc_data = [
+            ["Sheet Name", "Record Count"],
+        ]
+        
+        # Add User Stats and Computer Stats first (if they will be created)
+        users_csv_path = os.path.join(csv_dir, 'Users.csv')
+        computers_csv_path = os.path.join(csv_dir, 'Computers.csv')
+        
+        if os.path.exists(users_csv_path):
+            toc_data.append(["User Stats", "Statistics"])
+        if os.path.exists(computers_csv_path):
+            toc_data.append(["Computer Stats", "Statistics"])
+        
+        # Add sheets to TOC (excluding AboutPyADRecon as it was already created)
+        for csv_file in csv_files:
+            if csv_file != about_csv:
+                sheet_name = csv_file.replace('.csv', '')
+                toc_data.append([sheet_name, file_counts[csv_file]])
+
+        # Create TOC sheet second
+        toc_ws = wb.create_sheet("Table of Contents")
+        
+        # Write header with styling
+        header_row = []
+        for header in toc_data[0]:
+            cell = WriteOnlyCell(toc_ws, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = left_alignment
+            header_row.append(cell)
+        toc_ws.append(header_row)
+        
+        # Write data rows
+        for row in toc_data[1:]:
+            toc_ws.append(row)
+
+        # Create User Stats tab if Users.csv exists
+        if os.path.exists(users_csv_path):
+            logger.info("    Creating User Stats tab from Users.csv...")
+            # Read Users.csv into memory and detect thresholds from column names
+            users_data = []
+            password_age_days = 180  # Default
+            dormant_days = 90  # Default
+            
+            with open(users_csv_path, 'r', encoding='utf-8', errors='replace', newline='') as f:
+                reader = csv.DictReader(f)
+                
+                # Try to extract thresholds from column names
+                if reader.fieldnames:
+                    for fieldname in reader.fieldnames:
+                        if 'Password Age (>' in fieldname and 'days)' in fieldname:
+                            try:
+                                match = re.search(r'> (\d+) days', fieldname)
+                                if match:
+                                    password_age_days = int(match.group(1))
+                            except:
+                                pass
+                        elif 'Dormant (>' in fieldname and 'days)' in fieldname:
+                            try:
+                                match = re.search(r'> (\d+) days', fieldname)
+                                if match:
+                                    dormant_days = int(match.group(1))
+                            except:
+                                pass
+                
+                for row in reader:
+                    # Convert string values to appropriate types
+                    processed_row = {}
+                    for key, value in row.items():
+                        if value in ['True', 'TRUE', 'true']:
+                            processed_row[key] = True
+                        elif value in ['False', 'FALSE', 'false']:
+                            processed_row[key] = False
+                        elif value == '':
+                            processed_row[key] = ''
+                        else:
+                            # Try to convert to number
+                            try:
+                                if '.' in value:
+                                    processed_row[key] = float(value)
+                                else:
+                                    processed_row[key] = int(value)
+                            except (ValueError, AttributeError):
+                                processed_row[key] = value
+                    users_data.append(processed_row)
+            
+            # Calculate statistics with detected thresholds
+            user_stats = calculate_user_stats(users_data, password_age_days, dormant_days)
+            user_stats_ws = wb.create_sheet("User Stats")
+            
+            # Add heading
+            heading_cell = WriteOnlyCell(user_stats_ws, value="Status of User Accounts")
+            heading_cell.font = Font(bold=True, size=14)
+            user_stats_ws.append([heading_cell])
+            user_stats_ws.append([])  # Blank row
+            
+            # Add enabled/disabled summary
+            summary_header_row = []
+            for header in ["Category", "Count"]:
+                cell = WriteOnlyCell(user_stats_ws, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = left_alignment
+                summary_header_row.append(cell)
+            user_stats_ws.append(summary_header_row)
+            
+            user_stats_ws.append(["Enabled Users", user_stats['enabled_count']])
+            user_stats_ws.append(["Disabled Users", user_stats['disabled_count']])
+            user_stats_ws.append(["Total Users", user_stats['total_count']])
+            user_stats_ws.append([])  # Blank row
+            
+            # Add statistics table header
+            stats_headers = ["Category", "Enabled Count", "Enabled Percentage", 
+                           "Disabled Count", "Disabled Percentage", "Total Count", "Total Percentage"]
+            stats_header_row = []
+            for header in stats_headers:
+                cell = WriteOnlyCell(user_stats_ws, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = left_alignment
+                stats_header_row.append(cell)
+            user_stats_ws.append(stats_header_row)
+            
+            # Add statistics data
+            total_enabled = user_stats['enabled_count']
+            total_disabled = user_stats['disabled_count']
+            total_count = user_stats['total_count']
+            
+            for category, counts in user_stats['categories'].items():
+                enabled_count = counts['enabled_count']
+                disabled_count = counts['disabled_count']
+                cat_total = counts['total_count']
+                
+                # Calculate percentages
+                enabled_pct = f"{(enabled_count / total_enabled * 100):.1f}%" if total_enabled > 0 else "0.0%"
+                disabled_pct = f"{(disabled_count / total_disabled * 100):.1f}%" if total_disabled > 0 else "0.0%"
+                total_pct = f"{(cat_total / total_count * 100):.1f}%" if total_count > 0 else "0.0%"
+                
+                user_stats_ws.append([
+                    category,
+                    enabled_count,
+                    enabled_pct,
+                    disabled_count,
+                    disabled_pct,
+                    cat_total,
+                    total_pct
+                ])
+
+        # Create Computer Stats tab if Computers.csv exists
+        computers_csv_path = os.path.join(csv_dir, 'Computers.csv')
+        if os.path.exists(computers_csv_path):
+            logger.info("    Creating Computer Stats tab from Computers.csv...")
+            # Read Computers.csv into memory and detect thresholds from column names
+            computers_data = []
+            password_age_days = 30  # Default for computers
+            dormant_days = 90  # Default
+            
+            with open(computers_csv_path, 'r', encoding='utf-8', errors='replace', newline='') as f:
+                reader = csv.DictReader(f)
+                
+                # Try to extract thresholds from column names
+                if reader.fieldnames:
+                    for fieldname in reader.fieldnames:
+                        if 'Password Age (>' in fieldname and 'days)' in fieldname:
+                            try:
+                                match = re.search(r'> (\d+) days', fieldname)
+                                if match:
+                                    password_age_days = int(match.group(1))
+                            except:
+                                pass
+                        elif 'Dormant (>' in fieldname and 'days)' in fieldname:
+                            try:
+                                match = re.search(r'> (\d+) days', fieldname)
+                                if match:
+                                    dormant_days = int(match.group(1))
+                            except:
+                                pass
+                
+                for row in reader:
+                    # Convert string values to appropriate types
+                    processed_row = {}
+                    for key, value in row.items():
+                        if value in ['True', 'TRUE', 'true']:
+                            processed_row[key] = True
+                        elif value in ['False', 'FALSE', 'false']:
+                            processed_row[key] = False
+                        elif value == '':
+                            processed_row[key] = ''
+                        else:
+                            # Try to convert to number
+                            try:
+                                if '.' in value:
+                                    processed_row[key] = float(value)
+                                else:
+                                    processed_row[key] = int(value)
+                            except (ValueError, AttributeError):
+                                processed_row[key] = value
+                    computers_data.append(processed_row)
+            
+            # Read LAPS.csv if it exists for LAPS detection
+            laps_data = []
+            laps_csv_path = os.path.join(csv_dir, 'LAPS.csv')
+            if os.path.exists(laps_csv_path):
+                with open(laps_csv_path, 'r', encoding='utf-8', errors='replace', newline='') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        processed_row = {}
+                        for key, value in row.items():
+                            if value in ['True', 'TRUE', 'true']:
+                                processed_row[key] = True
+                            elif value in ['False', 'FALSE', 'false']:
+                                processed_row[key] = False
+                            else:
+                                processed_row[key] = value
+                        laps_data.append(processed_row)
+            
+            # Calculate statistics with detected thresholds
+            computer_stats = calculate_computer_stats(computers_data, laps_data, password_age_days, dormant_days)
+            computer_stats_ws = wb.create_sheet("Computer Stats")
+            
+            # Add heading
+            heading_cell = WriteOnlyCell(computer_stats_ws, value="Status of Computer Accounts")
+            heading_cell.font = Font(bold=True, size=14)
+            computer_stats_ws.append([heading_cell])
+            computer_stats_ws.append([])  # Blank row
+            
+            # Add enabled/disabled summary
+            summary_header_row = []
+            for header in ["Category", "Count"]:
+                cell = WriteOnlyCell(computer_stats_ws, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = left_alignment
+                summary_header_row.append(cell)
+            computer_stats_ws.append(summary_header_row)
+            
+            computer_stats_ws.append(["Enabled Computers", computer_stats['enabled_count']])
+            computer_stats_ws.append(["Disabled Computers", computer_stats['disabled_count']])
+            computer_stats_ws.append(["Total Computers", computer_stats['total_count']])
+            computer_stats_ws.append([])  # Blank row
+            
+            # Add statistics table header
+            stats_headers = ["Category", "Enabled Count", "Enabled Percentage", 
+                           "Disabled Count", "Disabled Percentage", "Total Count", "Total Percentage"]
+            stats_header_row = []
+            for header in stats_headers:
+                cell = WriteOnlyCell(computer_stats_ws, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = left_alignment
+                stats_header_row.append(cell)
+            computer_stats_ws.append(stats_header_row)
+            
+            # Add statistics data
+            total_enabled = computer_stats['enabled_count']
+            total_disabled = computer_stats['disabled_count']
+            total_count = computer_stats['total_count']
+            
+            for category, counts in computer_stats['categories'].items():
+                enabled_count = counts['enabled_count']
+                disabled_count = counts['disabled_count']
+                cat_total = counts['total_count']
+                
+                # Calculate percentages
+                enabled_pct = f"{(enabled_count / total_enabled * 100):.1f}%" if total_enabled > 0 else "0.0%"
+                disabled_pct = f"{(disabled_count / total_disabled * 100):.1f}%" if total_disabled > 0 else "0.0%"
+                total_pct = f"{(cat_total / total_count * 100):.1f}%" if total_count > 0 else "0.0%"
+                
+                computer_stats_ws.append([
+                    category,
+                    enabled_count,
+                    enabled_pct,
+                    disabled_count,
+                    disabled_pct,
+                    cat_total,
+                    total_pct
+                ])
+
+        # Process each CSV file (excluding AboutPyADRecon as it was already created)
+        remaining_csv_files = [f for f in csv_files if f != 'AboutPyADRecon.csv']
+        total_files = len(remaining_csv_files)
+        for idx, csv_file in enumerate(remaining_csv_files, 1):
+            original_name = csv_file.replace('.csv', '')
+            # Use friendly name if available, otherwise use original name
+            display_name = SHEET_NAME_MAPPING.get(original_name, original_name)
+            sheet_name = display_name[:31]  # Excel limit
+            record_count = file_counts[csv_file]
+
+            logger.info(f"    [{idx}/{total_files}] Processing {csv_file} ({record_count:,} records)...")
+
+            csv_path = os.path.join(csv_dir, csv_file)
+            ws = wb.create_sheet(sheet_name)
+
+            with open(csv_path, 'r', encoding='utf-8', errors='replace', newline='') as f:
+                reader = csv.reader(f)
+
+                # Write header with styling
+                try:
+                    headers = next(reader)
+                    header_row = []
+                    for header in headers:
+                        cell = WriteOnlyCell(ws, value=header)
+                        cell.font = header_font
+                        cell.fill = header_fill
+                        cell.alignment = left_alignment
+                        header_row.append(cell)
+                    ws.append(header_row)
+                except StopIteration:
+                    continue  # Empty file
+
+                # Read all data rows into memory for sorting
+                all_rows = []
+                for row in reader:
+                    # Convert empty strings and handle encoding
+                    clean_row = []
+                    for val in row:
+                        if val == '':
+                            clean_row.append('')
+                        else:
+                            # Try to convert to number if possible
+                            try:
+                                if '.' in val:
+                                    clean_row.append(float(val))
+                                else:
+                                    clean_row.append(int(val))
+                            except ValueError:
+                                clean_row.append(val)
+                    all_rows.append(clean_row)
+                
+                # Sort by first column (case-insensitive string comparison)
+                try:
+                    all_rows.sort(key=lambda x: str(x[0]).lower() if len(x) > 0 else '')
+                except Exception as e:
+                    logger.debug(f"Could not sort {csv_file}: {e}")
+                
+                # Write sorted data rows
+                batch_size = 10000
+                for row_num, clean_row in enumerate(all_rows, 1):
+                    ws.append(clean_row)
+
+                    # Progress for large files
+                    if record_count > batch_size and row_num % batch_size == 0:
+                        pct = (row_num / record_count) * 100
+                        logger.info(f"        {row_num:,}/{record_count:,} rows ({pct:.0f}%)")
+
+        # Determine output filename
+        if output_file:
+            filename = output_file
+        else:
+            # Put in parent directory of CSV-Files
+            parent_dir = os.path.dirname(csv_dir.rstrip('/'))
+            if os.path.basename(csv_dir) == 'CSV-Files':
+                filename = os.path.join(parent_dir, "ADRecon-Report.xlsx")
+            else:
+                filename = os.path.join(csv_dir, "ADRecon-Report.xlsx")
+
+        logger.info(f"    Saving Excel file...")
+        wb.save(filename)
+        
+        # Reopen to add filters and auto-size columns
+        logger.info(f"    Adding filters and auto-sizing columns...")
+        
+        wb = load_workbook(filename)
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            
+            # Apply alignment based on sheet type
+            if sheet_name == "Table of Contents":
+                # TOC: first column left-aligned, second column (Record Count) centered
+                for row in ws.iter_rows():
+                    for col_idx, cell in enumerate(row, 1):
+                        if col_idx == 1:
+                            cell.alignment = Alignment(horizontal='left', vertical='top')
+                        else:
+                            cell.alignment = Alignment(horizontal='center', vertical='top')
+            elif sheet_name in ["User Stats", "Computer Stats"]:
+                # Stats sheets: first column left-aligned, rest centered
+                for row in ws.iter_rows():
+                    for col_idx, cell in enumerate(row, 1):
+                        if col_idx == 1:
+                            cell.alignment = Alignment(horizontal='left', vertical='top')
+                        else:
+                            cell.alignment = Alignment(horizontal='center', vertical='top')
+            else:
+                # All other sheets: left-aligned
+                for row in ws.iter_rows():
+                    for cell in row:
+                        cell.alignment = Alignment(horizontal='left', vertical='top')
+            
+            # Auto-size all columns
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 100)
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Add filters (skip TOC and stats sheets)
+            if sheet_name not in ["Table of Contents", "User Stats", "Computer Stats"]:
+                if ws.max_row > 0 and ws.max_column > 0:
+                    ws.auto_filter.ref = ws.dimensions
+        
+        wb.save(filename)
+        wb.close()
+
+        duration = datetime.now() - start_time
+        logger.info(f"[+] Excel Report saved to: {filename}")
+        logger.info(f"[+] Total time: {duration}")
+        return filename
+
+    except Exception as e:
+        logger.error(f"Failed to create Excel report: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def main():
     """Main entry point."""
     print(BANNER)
 
     parser = argparse.ArgumentParser(
-        description='PyADRecon ADWS - Active Directory Reconnaissance using ADWS',
+        description='PyADRecon-ADWS # Active Directory Reconnaissance using ADWS',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
+    # Version
+    parser.add_argument('--version', action='version', version=f'PyADRecon-ADWS {VERSION}')
+
+    # Standalone Excel generation mode
+    parser.add_argument('--generate-excel-from', metavar='CSV_DIR',
+                        help='Generate Excel report from existing CSV files (standalone mode)')
+
     # Connection parameters
-    parser.add_argument('-d', '--domain', required=True, help='Domain name (e.g., example.com)')
-    parser.add_argument('-u', '--username', required=True, help='Username (DOMAIN\\user or user@domain.com)')
+    parser.add_argument('-d', '--domain', help='Domain name (e.g., example.com)')
+    parser.add_argument('-u', '--username', help='Username (DOMAIN\\user or user@domain.com)')
     parser.add_argument('-p', '--password', help='Password or LM:NTLM hash (will prompt if not provided)')
-    parser.add_argument('-dc', '--domain-controller', required=True, help='Domain controller hostname or IP')
+    parser.add_argument('-dc', '--domain-controller', help='Domain controller hostname or IP')
     parser.add_argument('--port', type=int, default=9389, help='ADWS port (default: 9389)')
+
+    # Authentication options
+    parser.add_argument('--auth', choices=['ntlm', 'kerberos'], default='ntlm',
+                        help='Authentication method (default: ntlm) - Note: Kerberos not yet implemented for ADWS')
+    parser.add_argument('--tgt-file', default='',
+                        help='Path to Kerberos TGT ccache file (not yet implemented for ADWS)')
+    parser.add_argument('--tgt-base64', default='',
+                        help='Base64-encoded Kerberos TGT ccache (not yet implemented for ADWS)')
+    parser.add_argument('--workstation', default='',
+                        help='NTLM authentication workstation name (default: random)')
 
     # Collection options  
     parser.add_argument('-c', '--collect', default='default',
@@ -5560,16 +6173,52 @@ def main():
     parser.add_argument('--only-enabled', action='store_true',
                         help='Only collect enabled users/computers')
 
+    # Threshold options
+    parser.add_argument('--page-size', type=int, default=1000,
+                        help='ADWS query page size (default: 1000)')
+    parser.add_argument('--dormant-days', type=int, default=90,
+                        help='Users/Computers with lastLogon older than X days are dormant (default: 90)')
+    parser.add_argument('--password-age', type=int, default=180,
+                        help='Users with pwdLastSet older than X days have old passwords (default: 180)')
+
     # Output options
     parser.add_argument('-o', '--output', help='Output directory (default: PyADRecon-Report-<timestamp>)')
     parser.add_argument('--no-excel', action='store_true', help='Skip Excel export')
-
-    # Stealth options
-    parser.add_argument('--stealth', action='store_true', help='Enable stealth mode (slower, evades detection)')
-    parser.add_argument('--stealth-min-delay', type=float, default=1.0, help='Minimum delay between queries (seconds)')
-    parser.add_argument('--stealth-max-delay', type=float, default=3.0, help='Maximum delay between queries (seconds)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
 
     args = parser.parse_args()
+
+    # Standalone Excel generation mode
+    if args.generate_excel_from:
+        if not OPENPYXL_AVAILABLE:
+            logger.error("[!] openpyxl not available - install with: pip install openpyxl")
+            sys.exit(1)
+        
+        logger.info(f"[*] Generating Excel report from: {args.generate_excel_from}")
+        result = generate_excel_from_csv(args.generate_excel_from, args.output)
+        if result:
+            sys.exit(0)
+        else:
+            sys.exit(1)
+
+    # Configure logging level
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s')
+        logger.setLevel(logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
+        logger.setLevel(logging.INFO)
+
+    # Validate required arguments for normal mode
+    if not args.domain or not args.username or not args.domain_controller:
+        parser.error("the following arguments are required: -d/--domain, -u/--username, -dc/--domain-controller")
+
+    # Check for Kerberos authentication (not yet implemented)
+    if args.auth == 'kerberos' or args.tgt_file or args.tgt_base64:
+        logger.error("[!] Kerberos authentication is not yet implemented for ADWS protocol")
+        logger.error("[!] ADWS currently only supports NTLM authentication")
+        logger.error("[!] Please use --auth ntlm (default) or use the LDAP version (pyadrecon.py) for Kerberos support")
+        sys.exit(1)
 
     # Get password if not provided
     if not args.password:
@@ -5585,12 +6234,13 @@ def main():
         domain=args.domain,
         username=args.username,
         password=args.password,
-        auth_method='NTLM',
+        auth_method='NTLM',  # Always NTLM for ADWS (Kerberos not yet implemented)
         port=args.port,
         only_enabled=args.only_enabled,
-        stealth_mode=args.stealth,
-        stealth_min_delay=args.stealth_min_delay,
-        stealth_max_delay=args.stealth_max_delay,
+        page_size=args.page_size,
+        dormant_days=args.dormant_days,
+        password_age_days=args.password_age,
+        workstation=args.workstation if args.workstation else None,
     )
 
     # Configure collection based on modules
@@ -5621,11 +6271,6 @@ def main():
 
     os.makedirs(output_dir, exist_ok=True)
     config.output_dir = output_dir
-
-    # Display stealth mode status
-    if config.stealth_mode:
-        logger.info("[*] STEALTH MODE ENABLED - Queries will be delayed to evade detection")
-        logger.info(f"[*] Delay range: {config.stealth_min_delay}-{config.stealth_max_delay}s")
 
     # Run reconnaissance
     recon = PyADRecon(config)
