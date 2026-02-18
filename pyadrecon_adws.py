@@ -6247,11 +6247,15 @@ def main():
 
     # Configure collection based on modules
     if 'default' not in collect_modules and 'all' not in collect_modules:
-        # Disable all first
+        # Disable all first, then enable only requested modules
         config.collect_forest = 'forest' in collect_modules
         config.collect_domain = 'domain' in collect_modules
         config.collect_trusts = 'trusts' in collect_modules
         config.collect_sites = 'sites' in collect_modules
+        config.collect_subnets = 'subnets' in collect_modules
+        config.collect_schema = 'schema' in collect_modules
+        config.collect_password_policy = 'passwordpolicy' in collect_modules or 'password' in collect_modules
+        config.collect_fgpp = 'fgpp' in collect_modules
         config.collect_dcs = 'dcs' in collect_modules or 'domaincontrollers' in collect_modules
         config.collect_users = 'users' in collect_modules
         config.collect_user_spns = 'userspns' in collect_modules
@@ -6259,9 +6263,19 @@ def main():
         config.collect_group_members = 'groupmembers' in collect_modules
         config.collect_ous = 'ous' in collect_modules
         config.collect_gpos = 'gpos' in collect_modules
+        config.collect_gplinks = 'gplinks' in collect_modules
+        config.collect_dns_zones = 'dnszones' in collect_modules or 'dns' in collect_modules
+        config.collect_dns_records = 'dnsrecords' in collect_modules or 'dns' in collect_modules
+        config.collect_printers = 'printers' in collect_modules
         config.collect_computers = 'computers' in collect_modules
         config.collect_computer_spns = 'computerspns' in collect_modules
         config.collect_laps = 'laps' in collect_modules
+        config.collect_bitlocker = 'bitlocker' in collect_modules
+        config.collect_gmsa = 'gmsa' in collect_modules
+        config.collect_dmsa = 'dmsa' in collect_modules
+        config.collect_adcs = 'adcs' in collect_modules or 'certificates' in collect_modules
+        config.collect_protected_groups = 'protectedgroups' in collect_modules or 'protected' in collect_modules
+        config.collect_krbtgt = 'krbtgt' in collect_modules
         config.collect_kerberoastable = 'kerberoastable' in collect_modules
         config.collect_asrep_roastable = 'asreproastable' in collect_modules or 'asrep' in collect_modules
 
