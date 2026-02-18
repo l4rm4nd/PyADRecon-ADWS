@@ -1,3 +1,10 @@
+## [0.1.6](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.1.5...v0.1.6) (2026-02-18)
+
+
+### Bug Fixes
+
+* pypi pipx script calling ([bf8465d](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/bf8465dc466162ae54f9d47c4a118dcbcd9afddc))
+
 ## [0.1.5](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.1.4...v0.1.5) (2026-02-18)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * Update pyproject.toml ([79ee9d6](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/79ee9d6ac64224c61a3bdac8a7fea20510c66b13))
-
-## [0.1.1](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.1.0...v0.1.1) (2026-02-18)
-
-
-### Bug Fixes
-
-* Update README.md ([5292b24](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/5292b24a814a14e0ab184baa1015a5cb092d50d8))
 
