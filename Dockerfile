@@ -57,7 +57,7 @@ ENV OPENSSL_CONF=/etc/ssl/openssl.cnf
 COPY --from=builder /install /usr/local
 
 # Copy application
-COPY pyadrecon-adws.py /app/
+COPY pyadrecon_adws.py /app/
 COPY helpers/ /app/helpers/
 
 WORKDIR /app
