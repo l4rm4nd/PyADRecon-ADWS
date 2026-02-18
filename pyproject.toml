@@ -27,10 +27,13 @@ Repository = "https://github.com/l4rm4nd/PyADRecon-ADWS"
 Issues = "https://github.com/l4rm4nd/PyADRecon-ADWS/issues"
 
 [project.scripts]
+pyadrecon-adws = "pyadrecon_adws:main"
 pyadrecon_adws = "pyadrecon_adws:main"
 
+[tool.setuptools]
+py-modules = ["pyadrecon_adws"]
+
 [tool.setuptools.packages.find]
-where = ["helpers"]
 include = ["helpers*"]
 
 # Version comes from Git tags like v0.11.0. CI will build from the tag ref.
