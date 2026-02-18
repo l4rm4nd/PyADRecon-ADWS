@@ -61,4 +61,4 @@ COPY pyadrecon_adws.py /app/
 COPY helpers/ /app/helpers/
 
 WORKDIR /app
-ENTRYPOINT ["python", "pyadrecon-adws.py"]
+ENTRYPOINT ["python", "pyadrecon_adws.py"]
