@@ -4,6 +4,9 @@ Python3 implementation of an improved [ADRecon](https://github.com/sense-of-secu
 
 > ADRecon is a tool which gathers information about MS Active Directory and generates an XSLX report to provide a holistic picture of the current state of the target AD environment.
 
+>[!TIP]
+>Queries Active Directory Web Services (ADWS) over TCP/9389 instead of LDAP to fly under the EDR radar.
+
 ## Table of Contents
 
 - [Installation](#installation)
