@@ -1,3 +1,10 @@
+## [0.1.3](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.1.2...v0.1.3) (2026-02-18)
+
+
+### Bug Fixes
+
+* Update conventional-commits.yml ([29bd23e](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/29bd23e70860936301e04d8f7bf90c1da0c00c1b))
+
 ## [0.1.2](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.1.1...v0.1.2) (2026-02-18)
 
 
