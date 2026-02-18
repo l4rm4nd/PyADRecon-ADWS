@@ -1,19 +1,17 @@
-
 [build-system]
 requires = ["setuptools>=68", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-dependencies = [
 name = "PyADRecon-ADWS"
 dynamic = ["version"]
-description = "Python Active Directory Reconnaissance Tool (ADRecon port) with NTLM support."
+description = "Python Active Directory Reconnaissance Tool (ADRecon port) using ADWS with NTLM support."
 readme = "README.md"
 requires-python = ">=3.9"
 license-files = ["LICENSE"]
 license = "MIT"
 authors = [{ name = "LRVT" }]
-keywords = ["active-directory", "active directory", "adws","active directory web services", "ad", "recon", "reconnaissance", "enum", "enumeration", "adrecon", "pyadrecon", "security", "audit", "pentest", "adcs", "kerberoast"]
+keywords = ["active-directory", "active directory", "adws", "active directory web services", "ad", "recon", "reconnaissance", "enum", "enumeration", "adrecon", "pyadrecon", "security", "audit", "pentest", "adcs", "kerberoast"]
 
 dependencies = [
   "openpyxl>=3.1.5,<4",
@@ -30,7 +28,6 @@ Issues = "https://github.com/l4rm4nd/PyADRecon-ADWS/issues"
 
 [project.scripts]
 pyadrecon-adws = "pyadrecon-adws:main"
-
 
 [tool.setuptools.packages.find]
 where = ["helpers"]
