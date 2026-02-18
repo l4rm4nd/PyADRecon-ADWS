@@ -27,7 +27,7 @@ Repository = "https://github.com/l4rm4nd/PyADRecon-ADWS"
 Issues = "https://github.com/l4rm4nd/PyADRecon-ADWS/issues"
 
 [project.scripts]
-pyadrecon-adws = "pyadrecon-adws:main"
+pyadrecon_adws = "pyadrecon_adws:main"
 
 [tool.setuptools.packages.find]
 where = ["helpers"]
