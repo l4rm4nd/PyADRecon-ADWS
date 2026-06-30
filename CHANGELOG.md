@@ -1,3 +1,10 @@
+## [0.5.4](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.5.3...v0.5.4) (2026-06-30)
+
+
+### Bug Fixes
+
+* bump impacket ([1f83217](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/1f83217ac10f61969349b1693e045d8b82388f17))
+
 ## [0.5.3](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.5.2...v0.5.3) (2026-02-22)
 
 
@@ -25,11 +32,4 @@
 ### Features
 
 * paginated dashboard, fixed logging ([fbcd8d8](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/fbcd8d80d09c5efb727ab53d36dde465ea73b107))
-
-## [0.4.14](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.4.13...v0.4.14) (2026-02-22)
-
-
-### Bug Fixes
-
-* rename finding ([e09d60f](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/e09d60f8112b7ad2568af288deaeacfe5cba5a6d))
 
