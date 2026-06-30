@@ -1,5 +1,5 @@
 openpyxl==3.1.5
-impacket==0.13.0
+impacket==0.13.1
 
 # Kerberos authentication support (optional)
 gssapi==1.11.1; sys_platform != 'win32'
