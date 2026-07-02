@@ -1,3 +1,10 @@
+## [0.5.5](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.5.4...v0.5.5) (2026-07-02)
+
+
+### Bug Fixes
+
+* improve dashboard generator ([a3b4f3f](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/a3b4f3f02e10ddc8c96efc8233d359d54e684708))
+
 ## [0.5.4](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.5.3...v0.5.4) (2026-06-30)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * add delegation findings ([44abad0](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/44abad00ff1715cf984925e085034afcbd7aea8f))
-
-## [0.5.0](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.4.14...v0.5.0) (2026-02-22)
-
-
-### Features
-
-* paginated dashboard, fixed logging ([fbcd8d8](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/fbcd8d80d09c5efb727ab53d36dde465ea73b107))
 
