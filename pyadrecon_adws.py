@@ -566,7 +566,7 @@ def calculate_user_stats(users_data: List[Dict], password_age_days: int = 180, d
                 is_match = val is True or val == 'True'
             elif cat == 'Kerberos RC4':
                 val = user.get('Kerberos RC4', '')
-                is_match = bool(val) and val not in ('', 'False', False)
+                is_match = val == 'Supported'
             elif cat == 'Does Not Require Pre Auth':
                 val = user.get('Does Not Require Pre Auth', False)
                 is_match = val is True or val == 'True'
@@ -995,35 +995,11 @@ class PyADRecon:
         except Exception as e:
             logger.debug(f"Could not resolve SID {sid} in current domain: {e}")
         
-        # If not found in current domain and we're in a child domain, try forest root
-        if hasattr(self, 'forest_root_dn') and self.forest_root_dn != self.base_dn:
-            try:
-                entries = self.search(
-                    self.forest_root_dn,
-                    f"(objectSid={sid})",
-                    ['sAMAccountName', 'cn', 'distinguishedName', 'objectClass']
-                )
-                
-                if entries:
-                    entry = entries[0]
-                    sam_name = get_attr(entry, 'sAMAccountName', '')
-                    cn_name = get_attr(entry, 'cn', '')
-                    obj_classes = get_attr_list(entry, 'objectClass')
-                    
-                    if 'computer' in obj_classes:
-                        result = f"[Computer] {sam_name or cn_name}"
-                    elif 'group' in obj_classes:
-                        result = f"[Group] {sam_name or cn_name}"
-                    elif 'user' in obj_classes:
-                        result = f"[User] {sam_name or cn_name}"
-                    else:
-                        result = sam_name or cn_name
-                    
-                    self._sid_cache[sid] = result
-                    return result
-            except Exception as e:
-                logger.debug(f"Could not resolve SID {sid} in forest root: {e}")
-        
+        # If not found in current domain and we're in a child domain, the SID may belong
+        # to the forest root or a sibling domain.  Searching those domains causes ADWS to
+        # proxy the request to a remote ADWS endpoint which fails with NoConnectionAvailable
+        # in multi-domain forests.  Fall through to the domain-label logic below instead.
+
         # Before returning just the SID, check if it belongs to a known domain
         if sid.startswith('S-1-5-21-'):
             parts = sid.split('-')
@@ -2354,7 +2330,61 @@ class PyADRecon:
         results = []
 
         try:
-            # Get all groups with members
+            # ----------------------------------------------------------------
+            # Build an in-memory DN → {username, sid, type} cache so that we
+            # avoid issuing one ADWS round-trip per member (which scales to
+            # hundreds-of-thousands of calls in large domains).
+            #
+            # Sources (all already collected or fetched in a single bulk call):
+            #   1. self.results['Users']  – collected just before GroupMembers
+            #   2. self.results['Groups'] – collected just before GroupMembers
+            #   3. one bulk (objectCategory=computer) query done here
+            # ----------------------------------------------------------------
+            dn_cache = {}  # normalised-lower-DN -> {'username', 'sid', 'type'}
+
+            for user in self.results.get('Users', []):
+                dn = user.get('DistinguishedName', '')
+                if dn:
+                    dn_cache[dn.lower()] = {
+                        'username': user.get('UserName', ''),
+                        'sid': user.get('SID', ''),
+                        'type': 'user',
+                    }
+
+            for group in self.results.get('Groups', []):
+                dn = group.get('DistinguishedName', '')
+                if dn:
+                    dn_cache[dn.lower()] = {
+                        'username': group.get('Name', ''),
+                        'sid': group.get('SID', ''),
+                        'type': 'group',
+                    }
+
+            # Computers are collected after GroupMembers in the pipeline,
+            # so fetch them now in a single bulk ADWS call.
+            try:
+                computer_entries = self.search(
+                    search_base=self.base_dn,
+                    search_filter="(objectCategory=computer)",
+                    attributes=['sAMAccountName', 'objectSid', 'distinguishedName']
+                )
+                for comp_entry in computer_entries:
+                    dn = get_attr(comp_entry, 'distinguishedName', '')
+                    if dn:
+                        dn_cache[dn.lower()] = {
+                            'username': get_attr(comp_entry, 'sAMAccountName', ''),
+                            'sid': sid_to_str(get_attr(comp_entry, 'objectSid')),
+                            'type': 'computer',
+                        }
+                logger.debug(f"Group member DN cache built: {len(dn_cache)} entries")
+            except Exception as e:
+                logger.debug(f"Could not pre-fetch computers for group member cache: {e}")
+
+            base_dc_parts = [p.lower() for p in re.findall(r'DC=([^,]+)', self.base_dn, re.IGNORECASE)]
+
+            # ----------------------------------------------------------------
+            # Main enumeration: one ADWS call for all groups with members
+            # ----------------------------------------------------------------
             entries = self.search(
                 search_base=self.base_dn,
                 search_filter="(&(objectCategory=group)(member=*))",
@@ -2362,93 +2392,28 @@ class PyADRecon:
             )
 
             for entry in entries:
-                
                 group_name = get_attr(entry, 'name', '')
-                group_sam = get_attr(entry, 'sAMAccountName', '')
                 members = get_attr_list(entry, 'member')
 
                 for member_dn in members:
-                    # Extract member name from DN
-                    match = re.search(r'CN=([^,]+)', str(member_dn))
-                    member_name = match.group(1) if match else str(member_dn)
-                    
-                    # Query member details
+                    member_dn_str = str(member_dn)
+
+                    # Use a regex that handles LDAP DN escaping (e.g. "Wagner\, Klaus")
+                    match = re.search(r'CN=((?:[^,\\]|\\.)+)', member_dn_str)
+                    member_name = re.sub(r'\\(.)', r'\1', match.group(1)) if match else member_dn_str
+
                     member_username = ""
                     member_sid = ""
                     account_type = ""
-                    is_foreign_principal = False
-                    
-                    try:
-                        # Look up the member object to get its details
-                        member_entries = self.search(
-                            search_base=str(member_dn),
-                            search_filter="(objectClass=*)",
-                            attributes=['sAMAccountName', 'objectSid', 'objectClass'],
-                            scope='BASE'
-                        )
-                        
-                        if member_entries:
-                            member_entry = member_entries[0]
-                            member_username = get_attr(member_entry, 'sAMAccountName', '')
-                            member_sid_raw = get_attr(member_entry, 'objectSid')
-                            if member_sid_raw:
-                                member_sid = sid_to_str(member_sid_raw)
-                            
-                            # Determine account type from objectClass
-                            object_classes = get_attr_list(member_entry, 'objectClass')
-                            object_classes_str = [str(oc).lower() for oc in object_classes]
-                            
-                            if 'user' in object_classes_str and 'computer' not in object_classes_str:
-                                account_type = "user"
-                            elif 'computer' in object_classes_str:
-                                account_type = "computer"
-                            elif 'group' in object_classes_str:
-                                account_type = "group"
-                            else:
-                                account_type = "unknown"
-                        else:
-                            # Empty results - likely a referral to another domain
-                            member_dn_str = str(member_dn)
-                            
-                            # Check if this is a cross-domain member (different DC components)
-                            # Extract DC components from member DN
-                            member_dc_parts = re.findall(r'DC=([^,]+)', member_dn_str, re.IGNORECASE)
-                            base_dc_parts = re.findall(r'DC=([^,]+)', self.base_dn, re.IGNORECASE)
-                            
-                            # If member has different DC components, it's from another domain
-                            if member_dc_parts and member_dc_parts != base_dc_parts:
-                                is_foreign_principal = True
-                                member_domain = '.'.join(member_dc_parts)
-                                # Mark as foreign principal by including domain info in SID field
-                                member_sid = f"ForeignSecurityPrincipal:{member_domain}"
-                                logger.debug(f"Detected foreign principal: {member_name} from domain {member_domain}")
-                            
-                            # Guess account type from DN
-                            if ',CN=Users,' in member_dn_str or ',OU=Users,' in member_dn_str:
-                                account_type = "user"
-                            elif ',CN=Computers,' in member_dn_str or ',OU=Computers,' in member_dn_str:
-                                account_type = "computer"
-                            elif ',CN=Builtin,' in member_dn_str or 'CN=Groups' in member_dn_str:
-                                account_type = "group"
-                            else:
-                                account_type = "foreignSecurityPrincipal" if is_foreign_principal else "unknown"
-                                
-                    except Exception as e:
-                        logger.debug(f"Error querying member {member_dn}: {e}")
-                        # If lookup fails, try to detect cross-domain member from DN
-                        member_dn_str = str(member_dn)
-                        
-                        # Check if this is a cross-domain member
-                        member_dc_parts = re.findall(r'DC=([^,]+)', member_dn_str, re.IGNORECASE)
-                        base_dc_parts = re.findall(r'DC=([^,]+)', self.base_dn, re.IGNORECASE)
-                        
-                        if member_dc_parts and member_dc_parts != base_dc_parts:
-                            is_foreign_principal = True
-                            member_domain = '.'.join(member_dc_parts)
-                            member_sid = f"ForeignSecurityPrincipal:{member_domain}"
-                            logger.debug(f"Detected foreign principal (exception path): {member_name} from domain {member_domain}")
-                        
-                        # Guess account type from DN
+
+                    # ----------------------------------------------------------
+                    # Cross-domain check: skip ADWS for members from other domains.
+                    # ----------------------------------------------------------
+                    member_dc_parts = [p.lower() for p in re.findall(r'DC=([^,]+)', member_dn_str, re.IGNORECASE)]
+
+                    if member_dc_parts and member_dc_parts != base_dc_parts:
+                        member_domain = '.'.join(member_dc_parts)
+                        member_sid = f"ForeignSecurityPrincipal:{member_domain}"
                         if ',CN=Users,' in member_dn_str or ',OU=Users,' in member_dn_str:
                             account_type = "user"
                         elif ',CN=Computers,' in member_dn_str or ',OU=Computers,' in member_dn_str:
@@ -2456,7 +2421,61 @@ class PyADRecon:
                         elif ',CN=Builtin,' in member_dn_str or 'CN=Groups' in member_dn_str:
                             account_type = "group"
                         else:
-                            account_type = "foreignSecurityPrincipal" if is_foreign_principal else "unknown"
+                            account_type = "foreignSecurityPrincipal"
+                        logger.debug(f"Skipping cross-domain ADWS lookup for {member_name} from {member_domain}")
+
+                    else:
+                        # ----------------------------------------------------------
+                        # Same-domain: O(1) cache hit, no ADWS call needed.
+                        # ----------------------------------------------------------
+                        cached = dn_cache.get(member_dn_str.lower())
+                        if cached:
+                            member_username = cached['username']
+                            member_sid = cached['sid']
+                            account_type = cached['type']
+                        else:
+                            # Cache miss (deleted/phantom object, ForeignSecurityPrincipal
+                            # stub in local domain, or MSA not in the three bulk sets).
+                            # Fall back to a single ADWS BASE lookup.
+                            try:
+                                member_entries = self.search(
+                                    search_base=member_dn_str,
+                                    search_filter="(objectClass=*)",
+                                    attributes=['sAMAccountName', 'objectSid', 'objectClass'],
+                                    scope='BASE'
+                                )
+                                if member_entries:
+                                    me = member_entries[0]
+                                    member_username = get_attr(me, 'sAMAccountName', '')
+                                    sid_raw = get_attr(me, 'objectSid')
+                                    if sid_raw:
+                                        member_sid = sid_to_str(sid_raw)
+                                    ocs = [str(o).lower() for o in get_attr_list(me, 'objectClass')]
+                                    if 'computer' in ocs:
+                                        account_type = "computer"
+                                    elif 'user' in ocs:
+                                        account_type = "user"
+                                    elif 'group' in ocs:
+                                        account_type = "group"
+                                    elif 'msds-managedserviceaccount' in ocs or 'msds-groupmanagedserviceaccount' in ocs:
+                                        account_type = "msa"
+                                    else:
+                                        account_type = "unknown"
+                            except Exception as e:
+                                logger.debug(f"Fallback lookup failed for {member_dn_str}: {e}")
+
+                            # If still empty, guess from DN structure
+                            if not account_type:
+                                if ',CN=ForeignSecurityPrincipals,' in member_dn_str:
+                                    account_type = "foreignSecurityPrincipal"
+                                elif ',CN=Users,' in member_dn_str or ',OU=Users,' in member_dn_str:
+                                    account_type = "user"
+                                elif ',CN=Computers,' in member_dn_str or ',OU=Computers,' in member_dn_str:
+                                    account_type = "computer"
+                                elif ',CN=Builtin,' in member_dn_str or 'CN=Groups' in member_dn_str:
+                                    account_type = "group"
+                                else:
+                                    account_type = "unknown"
 
                     results.append({
                         "Group Name": group_name,
@@ -6260,8 +6279,8 @@ class PyADRecon:
                     disabled_count = counts['disabled_count']
                     cat_total = counts['total_count']
                     
-                    enabled_pct = f"{(enabled_count / total_enabled * 100):.1f}%" if total_enabled > 0 else "0.0%"
-                    disabled_pct = f"{(disabled_count / total_disabled * 100):.1f}%" if total_disabled > 0 else "0.0%"
+                    enabled_pct = f"{(enabled_count / cat_total * 100):.1f}%" if cat_total > 0 else "0.0%"
+                    disabled_pct = f"{(disabled_count / cat_total * 100):.1f}%" if cat_total > 0 else "0.0%"
                     total_pct = f"{(cat_total / total_count * 100):.1f}%" if total_count > 0 else "0.0%"
                     
                     user_stats_ws.append([
