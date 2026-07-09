@@ -1,3 +1,10 @@
+## [0.5.6](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.5.5...v0.5.6) (2026-07-09)
+
+
+### Bug Fixes
+
+* improve adws parsing and membership fetching ([2f5e2be](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/2f5e2beeefa3570b013e786d743180b8be4f96e2))
+
 ## [0.5.5](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.5.4...v0.5.5) (2026-07-02)
 
 
@@ -25,11 +32,4 @@
 ### Bug Fixes
 
 * rework Foreign Security Principals in Privileged Groups ([171019f](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/171019f50966e60662114ddc3201c07a54ead1c8))
-
-## [0.5.1](https://github.com/l4rm4nd/PyADRecon-ADWS/compare/v0.5.0...v0.5.1) (2026-02-22)
-
-
-### Bug Fixes
-
-* add delegation findings ([44abad0](https://github.com/l4rm4nd/PyADRecon-ADWS/commit/44abad00ff1715cf984925e085034afcbd7aea8f))
 
