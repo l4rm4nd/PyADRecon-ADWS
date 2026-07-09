@@ -1,5 +1,6 @@
 # PyADRecon output directories
 PyADRecon-ADWS-Report-*/
+PyADRecon-Report-*/
 results/
 
 # Python
