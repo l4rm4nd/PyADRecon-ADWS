@@ -77,7 +77,7 @@ except ImportError:
     DASHBOARD_AVAILABLE = False
 
 # Constants
-VERSION = "v0.5.6"  # Automatically updated by CI/CD pipeline during release
+VERSION = "v0.5.7"  # Automatically updated by CI/CD pipeline during release
 BANNER = f"""
 ╔═══════════════════════════════════════════════════════════════════
 ║  PyADRecon-ADWS {VERSION} - Python AD Reconnaissance Tool (ADWS)
