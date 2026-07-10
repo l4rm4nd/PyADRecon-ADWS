@@ -2,6 +2,7 @@
 PyADRecon-ADWS-Report-*/
 PyADRecon-Report-*/
 results/
+pyadrecon-ldap.py
 
 # Python
 __pycache__/
